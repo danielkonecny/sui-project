@@ -18,5 +18,5 @@ ai:
 duel20:
 	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
 	
-duel20:
+duel:
 	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom
