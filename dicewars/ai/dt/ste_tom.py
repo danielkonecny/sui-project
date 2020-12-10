@@ -58,7 +58,7 @@ class AI:
             atk_prob = probability_of_successful_attack(self.board, area_name, target.get_name())
             hold_prob = atk_prob * probability_of_holding_area(self.board, target.get_name(), atk_power - 1, self.player_name)
             hold_2_prob = hold_prob * probability_of_holding_area(self.board, area_name, 1, self.player_name)
-            if hold_prob >= 0.1 or atk_power == 8:
+            if hold_2_prob >= 0.1 or atk_power == 8:
                 turns.append([area_name, target.get_name(), hold_prob])
 
         return sorted(turns, key=lambda turn: turn[2], reverse=True)
