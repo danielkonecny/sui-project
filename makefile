@@ -20,3 +20,6 @@ duel20:
 	
 duel:
 	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom
+
+debugDuel:
+	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom --logdir ./
