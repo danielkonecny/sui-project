@@ -12,8 +12,6 @@ class ExpMMNode:
         self.board_copy = copy.deepcopy(board)
         self.nodes = None
         self.ai = ai
-        self.max_num_of_turn_variants = 3    # graph width for each player
-        self.max_num_of_turns_per_player = 2 # graph height for each player
 
     # vykradl jsem z dicewars/client/ai_driver.py - handle_server_message
     def simulate_attack(self, from_data, to_data):
@@ -42,8 +40,8 @@ class ExpMMNode:
         # self.game.players[atk_name].set_score(msg['score'][str(atk_name)])
         # self.game.players[def_name].set_score(msg['score'][str(def_name)])
 
-    def exp_mm_rec(self, board, player_on_turn, calling_player):
-        if player_on_turn == calling_player:
+    def exp_mm_rec(self, board):
+        if player_on_turn == calling_player: #TODO
             # evaluate probability
             # pocet kostek na desce
             # TODO
@@ -51,13 +49,18 @@ class ExpMMNode:
         else:
             # recursion
             # tohle mus9 b7t pro konkr0tn9ho hr84e
-            turns = self.ai.possible_turns(board, player_on_turn)[:self.max_num_of_turn_variants]
-            if turns == 0:
+            turns = self.ai.possible_turns(board, player_on_turn)[:self.ai.max_num_of_turn_variants]
+            if len(turns) == 0:
                 # EndTurnCommand
                 return
 
-            p1 = ExpMMNode(board, self)
-            p1.nodes = turns
+            return_sum = 0
+            for turn in turns:
+                next_node = ExpMMNode(board, self)
+                return_sum += next_node.exp_mm_rec(None)
+
+            return_average = return_sum / len(turns)
+            return return_average
 
             node_score = 0
             for node in p1.nodes:
@@ -91,6 +94,8 @@ class AI:
         self.player_name = player_name
         self.logger = logging.getLogger('AI')
         self.debugcounter = 0
+        self.max_num_of_turn_variants = 3    # graph width for each player
+        self.max_num_of_turns_per_player = 2 # graph height for each player
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
         """AI agent's turn
@@ -101,9 +106,18 @@ class AI:
         """
         self.logger.debug("Looking for possible turns.")
         self.board = board
-        turns = self.possible_turns()
+        turns = self.possible_turns()[:self.ai.max_num_of_turn_variants]
 
-        p1 = ExpMMNode(board, self)
+        best_return = 0
+        best_return_turn = None
+        return_sum = 0
+        for turn in turns:
+            next_node = ExpMMNode(board, self)
+            actual_ret = next_node.exp_mm_rec(None)
+            return_sum += actual_ret
+            if act_ret > best_return:
+                best_return_turn = turn
+
         ret = p1.exp_mm_rec(self.board, player_on_turn, calling_player)
 
         # turns - 2,6,8,10
