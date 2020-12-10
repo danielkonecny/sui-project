@@ -8,15 +8,12 @@ from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
 
 
 class ExpMMNode:
-    def __init__(self, board, ai_copy):
-        self.left = None
+    def __init__(self, board, ai):
         self.board_copy = copy.deepcopy(board)
-        # self.right = None
-        # self.value = None
-        self.ai_copy = ai_copy
-
-    def count_next_lr(self):
-        board_copy = copy.deepcopy(self.board)
+        self.nodes = None
+        self.ai = ai
+        self.max_num_of_turn_variants = 3    # graph width for each player
+        self.max_num_of_turns_per_player = 2 # graph height for each player
 
     # vykradl jsem z dicewars/client/ai_driver.py - handle_server_message
     def simulate_attack(self, from_data, to_data):
@@ -44,6 +41,38 @@ class ExpMMNode:
 
         # self.game.players[atk_name].set_score(msg['score'][str(atk_name)])
         # self.game.players[def_name].set_score(msg['score'][str(def_name)])
+
+    def exp_mm_rec(self, board, player_on_turn, calling_player):
+        if player_on_turn == calling_player:
+            # evaluate probability
+            # pocet kostek na desce
+            # TODO
+            return
+        else:
+            # recursion
+            # tohle mus9 b7t pro konkr0tn9ho hr84e
+            turns = self.ai.possible_turns(board, player_on_turn)[:self.max_num_of_turn_variants]
+            if turns == 0:
+                # EndTurnCommand
+                return
+
+            p1 = ExpMMNode(board, self)
+            p1.nodes = turns
+
+            node_score = 0
+            for node in p1.nodes:
+                node_score = node_score + self.ai.exp_mm_rec(self, node.board, player_on_turn++, calling_player)
+
+
+            node_average = node_score / size(p1.nodes)
+
+            p1.simulate_attack(turns[0][0], turns[0][1])
+            self.ai.ai_turn(p1.board_copy)
+
+            # self.exp_mm_rec(player_on_turn++, calling_player)
+
+    def get_next_player(self):
+
 
 
 class AI:
@@ -73,37 +102,32 @@ class AI:
         self.logger.debug("Looking for possible turns.")
         self.board = board
         turns = self.possible_turns()
+
+        p1 = ExpMMNode(board, self)
+        ret = p1.exp_mm_rec(self.board, player_on_turn, calling_player)
+
         # turns - 2,6,8,10
         # vezmeme 2 nejlepsi a udelame pro ne expmm na jedno kolo (2 nejlepsi tahy (podle ste) kazdy)
-        # p1 = ExpMMNode(self.board, self)
-        # if len(turns) >= 2:
-            # p1.left = turns[0]
-            # p1.right = turns[1]
-            # print(self)
-            # print(p1.ai_copy)
-        # p1.count_next_lr()
 
-        if(self.debugcounter == 0):
-
-
-            print("puvodni")
-            print(self.board)
-            for key, area in self.board.areas.items():
-                print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
-
-            p1 = ExpMMNode(self.board, self)
-            print("upravena")
-            # print(turns)
-            if len(turns) > 0:
-                self.debugcounter += 1
-                print("udelam vsechno")
-                p1.simulate_attack(turns[0][0], turns[0][1])
-                for key, area in p1.board_copy.areas.items():
-                    print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
-                print("odkud: ", turns[0][0])
-                print("kampak: ", turns[0][1])
-            else:
-                print("nebudu delat nic!")
+        # if(self.debugcounter == 0):
+        #     print("puvodni")
+        #     print(self.board)
+        #     for key, area in self.board.areas.items():
+        #         print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
+        #
+        #     p1 = ExpMMNode(self.board, self)
+        #     print("upravena")
+        #     # print(turns)
+        #     if len(turns) > 0:
+        #         self.debugcounter += 1
+        #         print("udelam vsechno")
+        #         p1.simulate_attack(turns[0][0], turns[0][1])
+        #         for key, area in p1.board_copy.areas.items():
+        #             print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
+        #         print("odkud: ", turns[0][0])
+        #         print("kampak: ", turns[0][1])
+        #     else:
+        #         print("nebudu delat nic!")
 
         if turns:
             turn = turns[0]
@@ -117,21 +141,28 @@ class AI:
         self.logger.debug("No more plays.")
         return EndTurnCommand()
 
-    def possible_turns(self):
+    def possible_turns(self, board=None, player_name=None):
         """Get a list of preferred moves
 
         This list is sorted with respect to hold probability in descending order.
         It includes all moves that either have hold probability higher or equal to 20 %
         or have strength of eight dice.
         """
+        if player_name is None:
+            player_name = self.player_name
+
+        if board is None:
+            board = self.board
+
         turns = []
 
-        for source, target in possible_attacks(self.board, self.player_name):
+        for source, target in possible_attacks(board, player_name):
             area_name = source.get_name()
             atk_power = source.get_dice()
-            atk_prob = probability_of_successful_attack(self.board, area_name, target.get_name())
-            hold_prob = atk_prob * probability_of_holding_area(self.board, target.get_name(), atk_power - 1, self.player_name)
-            hold_2_prob = hold_prob * probability_of_holding_area(self.board, area_name, 1, self.player_name)
+            atk_prob = probability_of_successful_attack(board, area_name, target.get_name())
+            hold_prob = atk_prob * probability_of_holding_area(board, target.get_name(), atk_power - 1,
+                                                               player_name)
+            hold_2_prob = hold_prob * probability_of_holding_area(board, area_name, 1, player_name)
             if hold_prob >= 0.2 or atk_power == 8:
                 turns.append([area_name, target.get_name(), hold_prob])
 
