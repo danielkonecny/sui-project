@@ -15,8 +15,10 @@ class ExpMMNode:
 
     # vykradl jsem z dicewars/client/ai_driver.py - handle_server_message
     def simulate_attack(self, from_data, to_data):
-        attacker = self.board_copy.get_area(from_data)
-        defender = self.board_copy.get_area(to_data)
+        board_after_battle = copy.deepcopy(self.board_copy)
+
+        attacker = board_after_battle.get_area(from_data)
+        defender = board_after_battle.get_area(to_data)
 
         attacker_dice = attacker.get_dice()
         defender_dice = defender.get_dice()
@@ -37,26 +39,36 @@ class ExpMMNode:
         else:
             print("fajt lost")
 
+        # todo Fylip chtet zkontrolovat
+        return board_after_battle
+
         # self.game.players[atk_name].set_score(msg['score'][str(atk_name)])
         # self.game.players[def_name].set_score(msg['score'][str(def_name)])
 
-    def exp_mm_rec(self, board):
+    def next_player(self):
+        for player_name in [1, 2, 3]:
+            yield player_name
+
+    def exp_mm_rec(self, board, player_on_turn, calling_player):
         if player_on_turn == calling_player: #TODO
             # evaluate probability
             # pocet kostek na desce
             # TODO
-            return
+            return # heuristicki kombik
         else:
             # recursion
             # tohle mus9 b7t pro konkr0tn9ho hr84e
             turns = self.ai.possible_turns(board, player_on_turn)[:self.ai.max_num_of_turn_variants]
             if len(turns) == 0:
-                # EndTurnCommand
-                return
+                # TODO EndTurnCommand
+                return # hraje další player
 
             return_sum = 0
             for turn in turns:
-                next_node = ExpMMNode(board, self)
+                # todo zkontrolovat turny
+                print(turn)
+                board_after_battle = self.simulate_attack(turn[0], turn[1])
+                next_node = ExpMMNode(board_after_battle, self)
                 return_sum += next_node.exp_mm_rec(None)
 
             return_average = return_sum / len(turns)
@@ -64,7 +76,7 @@ class ExpMMNode:
 
             node_score = 0
             for node in p1.nodes:
-                node_score = node_score + self.ai.exp_mm_rec(self, node.board, player_on_turn++, calling_player)
+                node_score = node_score + node.exp_mm_rec(self, node.board, player_on_turn++, calling_player)
 
 
             node_average = node_score / size(p1.nodes)
@@ -73,9 +85,6 @@ class ExpMMNode:
             self.ai.ai_turn(p1.board_copy)
 
             # self.exp_mm_rec(player_on_turn++, calling_player)
-
-    def get_next_player(self):
-
 
 
 class AI:
@@ -118,7 +127,9 @@ class AI:
             if act_ret > best_return:
                 best_return_turn = turn
 
-        ret = p1.exp_mm_rec(self.board, player_on_turn, calling_player)
+
+
+
 
         # turns - 2,6,8,10
         # vezmeme 2 nejlepsi a udelame pro ne expmm na jedno kolo (2 nejlepsi tahy (podle ste) kazdy)
