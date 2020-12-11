@@ -10,11 +10,11 @@ from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
 class PlayerController:
     def __init__(self, board, max_turns_per_player, my_ai_name):
         self.board = board
-        self.player_sequence = self.get_player_sequence()
+        self.player_sequence = self.get_players_on_board()
         self.actual_player_nb_turns = 0
         self.max_turns_per_player = max_turns_per_player
         self.player_on_turn = self.player_sequence.index(my_ai_name)
-        self.player_count = len(player_order)
+        self.player_count = len(self.player_sequence)
 
     def get_next_player(self):
         actual_player_order = self.player_sequence.index(self.player_on_turn)
@@ -32,8 +32,21 @@ class PlayerController:
             self.actual_player_nb_turns = 0
             self.player_on_turn = self.get_next_player()
 
+    def get_players_on_board(self):
+        players = []
+        for area in self.board.areas:
+            area_owner = self.board.get_area(area).get_owner_name()
+            players.append(area_owner) if area_owner not in players else players
+        #players = sorted(players)
+        return players
+
+    def search_player_sequence(self):
+        # todo get player sequence, from game probably
+        pass
+
     def get_player_sequence(self):
-        return [1,2,3,4]
+        return self.player_sequence
+
 
 
 class ExpMMNode:
@@ -144,8 +157,12 @@ class AI:
         """
         self.logger.debug("Looking for possible turns.")
         self.board = board
-        turns = self.possible_turns()[:self.ai.max_num_of_turn_variants]
+        turns = self.possible_turns()[:self.max_num_of_turn_variants]
 
+        print("grcát")
+        controller = PlayerController(board, self.max_num_of_turns_per_player, self.player_name)
+        print("ok")
+        print(controller.get_player_sequence())
         best_return = 0
         best_return_turn = None
         return_sum = 0
