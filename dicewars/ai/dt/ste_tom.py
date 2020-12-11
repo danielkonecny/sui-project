@@ -15,13 +15,19 @@ class PlayerController:
         self.max_turns_per_player = max_turns_per_player
         self.player_on_turn = self.player_sequence.index(my_ai_name)
         self.player_count = len(self.player_sequence)
+        self.finish_recursion = 0
+        self.my_ai_name = my_ai_name
+
+    def get_my_ai_name(self):
+        return self.my_ai_name
 
     def get_next_player(self):
+        self.finish_recursion = 1
         actual_player_order = self.player_sequence.index(self.player_on_turn)
         next_player_order = actual_player_order + 1
-        if next_player_order > self.player_count:
+        if next_player_order >= self.player_count:
             next_player_order = 0
-        return next_player_order
+        return self.player_sequence[next_player_order]
 
     def get_player_on_turn(self):
         return self.player_on_turn
@@ -32,12 +38,15 @@ class PlayerController:
             self.actual_player_nb_turns = 0
             self.player_on_turn = self.get_next_player()
 
+    def i_skip(self):
+        self.player_on_turn = self.get_next_player()
+        self.actual_player_nb_turns = 0
+
     def get_players_on_board(self):
         players = []
         for area in self.board.areas:
             area_owner = self.board.get_area(area).get_owner_name()
             players.append(area_owner) if area_owner not in players else players
-        #players = sorted(players)
         return players
 
     def search_player_sequence(self):
@@ -47,6 +56,8 @@ class PlayerController:
     def get_player_sequence(self):
         return self.player_sequence
 
+    def should_finish(self):
+        return self.finish_recursion and (self.get_player_on_turn() == self.get_my_ai_name())
 
 
 class ExpMMNode:
@@ -81,52 +92,35 @@ class ExpMMNode:
         else:
             print("fajt lost")
 
-        # todo Fylip chtet zkontrolovat
         return board_after_battle
 
         # self.game.players[atk_name].set_score(msg['score'][str(atk_name)])
         # self.game.players[def_name].set_score(msg['score'][str(def_name)])
 
-    # def next_player(self):
-    #     for player_name in [1, 2, 3]:
-    #         yield player_name
-
-    def exp_mm_rec(self, board, player_on_turn, calling_player):
-        if player_on_turn == calling_player: #TODO
-            # evaluate probability
-            # pocet kostek na desce
-            # TODO
-            return # heuristicki kombik
+    def exp_mm_rec(self, player_controller):
+        if player_controller.should_finish():
+            return self.calculate_heuristic(player_controller.get_my_ai_name())
         else:
             # recursion
-            # tohle mus9 b7t pro konkr0tn9ho hr84e
-            turns = self.ai.possible_turns(board, player_on_turn)[:self.ai.max_num_of_turn_variants]
+            simulated_player_this_turn = player_controller.get_player_on_turn()
+            turns = self.ai.possible_turns(self.board_copy, simulated_player_this_turn)[:self.ai.max_num_of_turn_variants]
             if len(turns) == 0:
-                # TODO EndTurnCommand
-                return # hraje další player
+                player_controller.i_skip()
+                next_node = ExpMMNode(self.board_copy, self.ai)
+                return next_node.exp_mm_rec(player_controller)
+            else:
+                return_sum = 0
+                player_controller.i_just_played()
+                for turn in turns:
+                    board_after_battle = self.simulate_attack(turn[0], turn[1])
+                    next_node = ExpMMNode(board_after_battle, self.ai)
+                    return_sum += next_node.exp_mm_rec(copy.deepcopy(player_controller))
 
-            return_sum = 0
-            for turn in turns:
-                # todo zkontrolovat turny
-                print(turn)
-                board_after_battle = self.simulate_attack(turn[0], turn[1])
-                next_node = ExpMMNode(board_after_battle, self)
-                return_sum += next_node.exp_mm_rec(None)
+                return_average = return_sum / len(turns)
+                return return_average
 
-            return_average = return_sum / len(turns)
-            return return_average
-
-            node_score = 0
-            for node in p1.nodes:
-                node_score = node_score + node.exp_mm_rec(self, node.board, player_on_turn, calling_player) #TODO u player on turn bylo ++
-
-
-            node_average = node_score / size(p1.nodes)
-
-            p1.simulate_attack(turns[0][0], turns[0][1])
-            self.ai.ai_turn(p1.board_copy)
-
-            # self.exp_mm_rec(player_on_turn++, calling_player)
+    def calculate_heuristic(self, player):
+        return self.board_copy.get_player_dice(player)
 
 
 class AI:
@@ -147,6 +141,7 @@ class AI:
         self.debugcounter = 0
         self.max_num_of_turn_variants = 3    # graph width for each player
         self.max_num_of_turns_per_player = 2 # graph height for each player
+        self.player_controller = None
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
         """AI agent's turn
@@ -158,23 +153,28 @@ class AI:
         self.logger.debug("Looking for possible turns.")
         self.board = board
         turns = self.possible_turns()[:self.max_num_of_turn_variants]
+        self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player, self.player_name)
 
-        print("grcát")
-        controller = PlayerController(board, self.max_num_of_turns_per_player, self.player_name)
         print("ok")
-        print(controller.get_player_sequence())
-        best_return = 0
-        best_return_turn = None
-        return_sum = 0
-        for turn in turns:
-            next_node = ExpMMNode(board, self)
-            actual_ret = next_node.exp_mm_rec(None, None, None)
-            return_sum += actual_ret
-            if act_ret > best_return:
-                best_return_turn = turn
+        print(self.player_controller.get_player_sequence())
+        if len(turns) != 0:
+            best_return = 0
+            best_return_turn = None
+            root_node = ExpMMNode(self.board, self)
+            self.player_controller.i_just_played()
+            for turn in turns:
+                board_after_battle = root_node.simulate_attack(turn[0], turn[1])
+                next_node = ExpMMNode(board_after_battle, self)
+                actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
+                if act_ret > best_return:
+                    best_return_turn = turn
 
+            area_name = best_return_turn[0]
+            self.logger.debug("Possible turn: {}".format(best_return_turn))
+            hold_prob = best_return_turn[2]
+            self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, best_return_turn[1], hold_prob))
 
-
+            return BattleCommand(area_name, best_return_turn[1])
 
 
 
@@ -201,14 +201,14 @@ class AI:
         #     else:
         #         print("nebudu delat nic!")
 
-        if turns:
-            turn = turns[0]
-            area_name = turn[0]
-            self.logger.debug("Possible turn: {}".format(turn))
-            hold_prob = turn[2]
-            self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, turn[1], hold_prob))
-
-            return BattleCommand(area_name, turn[1])
+        # if turns:
+        #     turn = turns[0]
+        #     area_name = turn[0]
+        #     self.logger.debug("Possible turn: {}".format(turn))
+        #     hold_prob = turn[2]
+        #     self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, turn[1], hold_prob))
+        #
+        #     return BattleCommand(area_name, turn[1])
 
         self.logger.debug("No more plays.")
         return EndTurnCommand()

@@ -23,3 +23,9 @@ duel:
 
 debugDuel:
 	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom --logdir ./
+
+debugThreePlayers:
+	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom dt.stei --logdir ./
+
+debugFourPlayers:
+	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom dt.stei xlogin00 --logdir ./
