@@ -5,6 +5,9 @@ import random
 import socket
 import sys
 
+from os.path import exists
+import pickle
+
 from .player import Player
 
 from .summary import GameSummary
@@ -67,16 +70,29 @@ class Game:
     def run(self):
         """Main loop of the game
         """
+
+        game_log = {
+            "players": self.nb_players_alive,
+            "battles": []
+        }
+
         try:
             for i in range(1, self.number_of_players + 1):
                 player = self.players[i]
                 self.send_message(player, 'game_state')
             while True:
                 self.logger.debug("Current player {}".format(self.current_player.get_name()))
-                self.handle_player_turn()
+                self.handle_player_turn(game_log)
                 if self.check_win_condition():
                     sys.stdout.write(str(self.summary))
                     break
+
+            game_index = 0
+            while exists(f"game_logs/game{game_index:05d}.p"):
+                game_index += 1
+            with open(f"game_logs/game{game_index:05d}.p",
+                      "wb+") as game_file:
+                pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
 
         except KeyboardInterrupt:
             self.logger.info("Game interrupted.")
@@ -109,12 +125,24 @@ class Game:
         area.set_owner_name(player.get_name())
         player.add_area(area)
 
-    def handle_player_turn(self):
+    def handle_player_turn(self, game_log):
         """Handle clients message and carry out the action
         """
         self.logger.debug("Handling player {} ({}) turn".format(self.current_player.get_name(), self.current_player.nickname))
         player = self.current_player.get_name()
         msg = self.get_message(player)
+
+        areas = []
+        for key, area in self.board.areas.items():
+            areas.append({
+                "owner": area.owner_name - 1,
+                "dices": area.dice,
+                "adjacent_areas": [adjacent_area - 1 for adjacent_area in area.adjacent_areas_names]
+            })
+        game_log["battles"].append({
+            "player": player,
+            "areas": areas
+        })
 
         if msg['type'] == 'battle':
             self.nb_consecutive_end_of_turns = 0
