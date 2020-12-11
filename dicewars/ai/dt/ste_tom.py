@@ -7,6 +7,35 @@ import random
 from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
 
 
+class PlayerController:
+    def __init__(self, board, max_turns_per_player, my_ai_name):
+        self.board = board
+        self.player_sequence = self.get_player_sequence()
+        self.actual_player_nb_turns = 0
+        self.max_turns_per_player = max_turns_per_player
+        self.player_on_turn = self.player_sequence.index(my_ai_name)
+        self.player_count = len(player_order)
+
+    def get_next_player(self):
+        actual_player_order = self.player_sequence.index(self.player_on_turn)
+        next_player_order = actual_player_order + 1
+        if next_player_order > self.player_count:
+            next_player_order = 0
+        return next_player_order
+
+    def get_player_on_turn(self):
+        return self.player_on_turn
+
+    def i_just_played(self):
+        self.actual_player_nb_turns += self.actual_player_nb_turns
+        if self.actual_player_nb_turns == self.max_turns_per_player:
+            self.actual_player_nb_turns = 0
+            self.player_on_turn = self.get_next_player()
+
+    def get_player_sequence(self):
+        return [1,2,3,4]
+
+
 class ExpMMNode:
     def __init__(self, board, ai):
         self.board_copy = copy.deepcopy(board)
@@ -45,9 +74,9 @@ class ExpMMNode:
         # self.game.players[atk_name].set_score(msg['score'][str(atk_name)])
         # self.game.players[def_name].set_score(msg['score'][str(def_name)])
 
-    def next_player(self):
-        for player_name in [1, 2, 3]:
-            yield player_name
+    # def next_player(self):
+    #     for player_name in [1, 2, 3]:
+    #         yield player_name
 
     def exp_mm_rec(self, board, player_on_turn, calling_player):
         if player_on_turn == calling_player: #TODO
@@ -76,7 +105,7 @@ class ExpMMNode:
 
             node_score = 0
             for node in p1.nodes:
-                node_score = node_score + node.exp_mm_rec(self, node.board, player_on_turn++, calling_player)
+                node_score = node_score + node.exp_mm_rec(self, node.board, player_on_turn, calling_player) #TODO u player on turn bylo ++
 
 
             node_average = node_score / size(p1.nodes)
@@ -122,10 +151,11 @@ class AI:
         return_sum = 0
         for turn in turns:
             next_node = ExpMMNode(board, self)
-            actual_ret = next_node.exp_mm_rec(None)
+            actual_ret = next_node.exp_mm_rec(None, None, None)
             return_sum += actual_ret
             if act_ret > best_return:
                 best_return_turn = turn
+
 
 
 
