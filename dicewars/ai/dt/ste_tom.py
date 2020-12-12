@@ -159,25 +159,28 @@ class AI:
         self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player, self.player_name)
 
         # print(self.player_controller.get_player_sequence())
-        i = 0
-        if len(turns) != 0:
-            best_return = -1
-            best_return_turn = None
-            root_node = ExpMMNode(self.board, self)
-            self.player_controller.i_just_played()
-            for turn in turns:
-                board_after_battle = root_node.simulate_attack(turn[0], turn[1])
-                next_node = ExpMMNode(board_after_battle, self)
-                actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
-                if actual_ret > best_return:
-                    best_return_turn = turn
+        if time_left > 2:
+            i = 0
+            if len(turns) != 0:
+                best_return = -1
+                best_return_turn = None
+                root_node = ExpMMNode(self.board, self)
+                self.player_controller.i_just_played()
+                for turn in turns:
+                    board_after_battle = root_node.simulate_attack(turn[0], turn[1])
+                    next_node = ExpMMNode(board_after_battle, self)
+                    actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
+                    if actual_ret > best_return:
+                        best_return_turn = turn
 
-            area_name = best_return_turn[0]
-            self.logger.debug("Possible turn: {}".format(best_return_turn))
-            hold_prob = best_return_turn[2]
-            self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, best_return_turn[1], hold_prob))
+                area_name = best_return_turn[0]
+                self.logger.debug("Possible turn: {}".format(best_return_turn))
+                hold_prob = best_return_turn[2]
+                self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, best_return_turn[1], hold_prob))
 
-            return BattleCommand(area_name, best_return_turn[1])
+                return BattleCommand(area_name, best_return_turn[1])
+        else:
+            return BattleCommand(turns[0][0], turns[0][1])
 
 
 
