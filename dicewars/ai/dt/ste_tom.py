@@ -13,7 +13,7 @@ class PlayerController:
         self.player_sequence = self.get_players_on_board()
         self.actual_player_nb_turns = 0
         self.max_turns_per_player = max_turns_per_player
-        self.player_on_turn = self.player_sequence.index(my_ai_name)
+        self.player_on_turn = my_ai_name
         self.player_count = len(self.player_sequence)
         self.finish_recursion = 0
         self.my_ai_name = my_ai_name
@@ -33,7 +33,7 @@ class PlayerController:
         return self.player_on_turn
 
     def i_just_played(self):
-        self.actual_player_nb_turns += self.actual_player_nb_turns
+        self.actual_player_nb_turns += 1
         if self.actual_player_nb_turns == self.max_turns_per_player:
             self.actual_player_nb_turns = 0
             self.player_on_turn = self.get_next_player()
@@ -86,11 +86,12 @@ class ExpMMNode:
 
         attacker.set_dice(1)
         if attacker_pwr > defender_pwr:
-            print("fajt won")
+            # print("fajt won")
             defender.set_dice(attacker_dice - 1)
             defender.set_owner(attacker.get_owner_name())
         else:
-            print("fajt lost")
+            pass
+            # print("fajt lost")
 
         return board_after_battle
 
@@ -139,8 +140,9 @@ class AI:
         self.player_name = player_name
         self.logger = logging.getLogger('AI')
         self.debugcounter = 0
-        self.max_num_of_turn_variants = 3    # graph width for each player
-        self.max_num_of_turns_per_player = 2 # graph height for each player
+        self.max_num_of_turn_first_level = 10  # graph width for our ai
+        self.max_num_of_turn_variants = 1    # graph width for each player
+        self.max_num_of_turns_per_player = 10  # graph height for each player
         self.player_controller = None
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
@@ -152,13 +154,14 @@ class AI:
         """
         self.logger.debug("Looking for possible turns.")
         self.board = board
-        turns = self.possible_turns()[:self.max_num_of_turn_variants]
+        # turns = self.possible_turns()[:self.max_num_of_turn_variants]
+        turns = self.possible_turns()[:self.max_num_of_turn_first_level]
         self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player, self.player_name)
 
-        print("ok")
-        print(self.player_controller.get_player_sequence())
+        # print(self.player_controller.get_player_sequence())
+        i = 0
         if len(turns) != 0:
-            best_return = 0
+            best_return = -1
             best_return_turn = None
             root_node = ExpMMNode(self.board, self)
             self.player_controller.i_just_played()
@@ -166,7 +169,7 @@ class AI:
                 board_after_battle = root_node.simulate_attack(turn[0], turn[1])
                 next_node = ExpMMNode(board_after_battle, self)
                 actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
-                if act_ret > best_return:
+                if actual_ret > best_return:
                     best_return_turn = turn
 
             area_name = best_return_turn[0]
@@ -239,6 +242,3 @@ class AI:
                 turns.append([area_name, target.get_name(), hold_prob])
 
         return sorted(turns, key=lambda turn: turn[2], reverse=True)
-
-    def testovaci(self):
-        print("hura")

@@ -17,6 +17,9 @@ ai:
 	
 duel20:
 	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
+
+duel20First:
+	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste_tom dt.ste
 	
 duel:
 	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom
@@ -29,3 +32,6 @@ debugThreePlayers:
 
 debugFourPlayers:
 	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste dt.ste_tom dt.stei xlogin00 --logdir ./
+
+debugDuelFirst:
+	python3 ./scripts/dicewars-ai-only.py -r -n 1 --ai dt.ste_tom dt.ste --logdir ./
