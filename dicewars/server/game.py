@@ -88,9 +88,9 @@ class Game:
                     break
 
             game_index = 0
-            while exists(f"test_logs/game{game_index:05d}.pickle"):
+            while exists(f"logs/game{game_index:05d}.pickle"):
                 game_index += 1
-            with open(f"test_logs/game{game_index:05d}.pickle", "wb+") as game_file:
+            with open(f"logs/game{game_index:05d}.pickle", "wb+") as game_file:
                 pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
 
         except KeyboardInterrupt:

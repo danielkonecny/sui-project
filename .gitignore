@@ -1,6 +1,7 @@
 .idea
 __pycache__
 debug.save
-train_logs
-test_logs
+logs
 models
+weights
+datasets

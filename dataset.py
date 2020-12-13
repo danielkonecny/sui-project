@@ -3,13 +3,20 @@ import os
 import numpy as np
 
 
-def iterate_through_logs(directory_str="game_logs"):
+def iterate_through_logs(directory_str="logs"):
     directory = os.fsencode(directory_str)
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         if filename.endswith(".pickle"):
             with open(os.path.join(directory_str, filename), "rb") as f:
-                data = pickle.load(f)
+                try:
+                    data = pickle.load(f)
+                except EOFError:
+                    print(f"File {filename} failed.")
+                    continue
+                except pickle.UnpicklingError:
+                    print(f"Pickle error.")
+                    continue
         yield data, filename
 
 
@@ -60,21 +67,16 @@ def get_winner_vector(last_battle, player_count):
     return winner_vector
 
 
-def save_dataset(battles, winners):
-    np.save("datasets/battles.npy", battles)
-    np.save("datasets/winners.npy", winners)
-
-
-def main():
+def prepare_dataset():
     first_game = True
     battles = None
     winners = None
 
-    for log, game_index in iterate_through_logs("test_logs"):
+    for log, game_index in iterate_through_logs():
         battle_count = len(log['battles'])
         area_count = len(log['battles'][0]['areas'])
         player_count = log['players']
-        game_battles = np.empty((battle_count, area_count, area_count+player_count+1))
+        game_battles = np.empty((battle_count, area_count, area_count + player_count + 1))
         game_winners = np.empty((battle_count, player_count))
         battle_index = 0
 
@@ -97,8 +99,54 @@ def main():
             battles = np.concatenate((battles, game_battles))
             winners = np.concatenate((winners, game_winners))
 
-    save_dataset(battles, winners)
+    assert len(battles) == len(winners)
+
+    return battles, winners
 
 
-if __name__ == '__main__':
-    main()
+class Dataset:
+    def __init__(self):
+        self.train_xs = None
+        self.train_ys = None
+        self.test_xs = None
+        self.test_ys = None
+        self.player_count = 4
+        self.data_shape = (29, 34)
+
+    def __str__(self):
+        report = "DATASET\n"
+        report += f"Train Xs: {self.train_xs.shape}\nTrain Ys: {self.train_ys.shape}\n"
+        report += f"Test Xs: {self.test_xs.shape}\nTest Ys: {self.test_ys.shape}"
+        return report
+
+    def load(self, path="datasets/"):
+        self.train_xs = np.load(f"{path}train_xs.npy")
+        self.train_ys = np.load(f"{path}train_ys.npy")
+        self.test_xs = np.load(f"{path}test_xs.npy")
+        self.test_ys = np.load(f"{path}test_ys.npy")
+
+    def reload(self, path="datasets/", train_percentage=0.8):
+        xs, ys = prepare_dataset()
+        size = len(xs)
+
+        shuffle = np.random.permutation(size)
+        shuffled_xs = xs[shuffle]
+        shuffled_ys = ys[shuffle]
+
+        dividing_index = int(size*train_percentage)
+        self.train_xs = shuffled_xs[:dividing_index]
+        self.train_ys = shuffled_ys[:dividing_index]
+        self.test_xs = shuffled_xs[dividing_index:]
+        self.test_ys = shuffled_ys[dividing_index:]
+
+        np.save(f"{path}train_xs.npy", self.train_xs)
+        np.save(f"{path}train_ys.npy", self.train_ys)
+        np.save(f"{path}test_xs.npy", self.test_xs)
+        np.save(f"{path}test_ys.npy", self.test_ys)
+
+    def provide_batch(self, batch_size=256):
+        size = len(self.train_ys)
+        shuffle = np.random.permutation(size)
+        for i in range(0, size, batch_size):
+            batch_indices = shuffle[i:i + batch_size]
+            yield self.train_xs[batch_indices], self.train_ys[batch_indices]
