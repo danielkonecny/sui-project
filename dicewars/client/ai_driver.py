@@ -109,7 +109,6 @@ class AIDriver:
                         model = Model()
                         model.load()
                         probabilities = model.predict_board(self.board)
-                        probabilities = np.squeeze(probabilities)
                         print(f"\nMOVE")
                         for index, probability in zip(range(4), probabilities):
                             print(f"Player {index}: {probability * 100:.2f} %")
