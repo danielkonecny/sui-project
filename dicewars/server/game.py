@@ -14,6 +14,7 @@ from .summary import GameSummary
 
 MAX_PASS_ROUNDS = 8
 MAX_BATTLES_PER_GAME = 10000  # obsevered maximum of 5671 over over 100k games
+SAVE_BOARDS = False
 
 
 class Game:
@@ -87,11 +88,12 @@ class Game:
                     sys.stdout.write(str(self.summary))
                     break
 
-            game_index = 0
-            while exists(f"logs/game{game_index:05d}.pickle"):
-                game_index += 1
-            with open(f"logs/game{game_index:05d}.pickle", "wb+") as game_file:
-                pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
+            if SAVE_BOARDS:
+                game_index = 0
+                while exists(f"logs/game{game_index:05d}.pickle"):
+                    game_index += 1
+                with open(f"logs/game{game_index:05d}.pickle", "wb+") as game_file:
+                    pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
 
         except KeyboardInterrupt:
             self.logger.info("Game interrupted.")

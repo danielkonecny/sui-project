@@ -1,7 +1,3 @@
 .idea
 __pycache__
 debug.save
-logs
-models
-weights
-datasets
