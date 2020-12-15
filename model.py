@@ -17,7 +17,7 @@ class Model:
         self.model.add(tf.keras.layers.Dense(self.dataset.player_count, activation='softmax'))
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    def train(self, epoch_count=10):
+    def train(self, epoch_count=5):
         self.dataset.load()
 
         for epoch_index in range(epoch_count):
@@ -40,16 +40,22 @@ class Model:
         self.model.load_weights(f'weights/model_weights{epoch_index:04d}.h5')
         self.model.evaluate(self.dataset.test_xs, self.dataset.test_ys)
 
-    def predict_board(self, board):
+    def predict_board(self, board, turn):
+        threshold = 50
         index = 0
-        model_input = np.zeros(551)
+        model_input = np.zeros(552)
         for key, area in board.areas.items():
             for adjacent_index in area.neighbours:
                 if (adjacent_index - 1) > (int(key) - 1):
                     model_input[index - (int(key) - 1) + adjacent_index - 2] = 1
             index += (29 - 1 - (int(key) - 1))
-            model_input[int(key) - 1 + 406] = area.dice
+            model_input[int(key) - 1 + 406] = area.dice/8
             model_input[4*(int(key) - 1) - 1 + 435 + area.owner_name] = 1
+            if turn > threshold:
+                model_input[551] = 0
+            else:
+                model_input[551] = 1 - turn / threshold
+
         model_input = np.expand_dims(model_input, 0)
         return np.squeeze(self.model.predict(model_input))
 
@@ -72,6 +78,6 @@ class Model:
 
 if __name__ == '__main__':
     model = Model()
-    model.dataset.load()
+    model.dataset.reload()
     model.train()
     model.save()

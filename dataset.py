@@ -63,7 +63,7 @@ def get_adjacent_vector(boards):
 def get_dice_vector(boards):
     dice_vector = np.zeros(len(boards))
     for area_index in range(len(boards)):
-        dice_vector[area_index] = boards[area_index]['dices']
+        dice_vector[area_index] = boards[area_index]['dices']/8
     return dice_vector
 
 
@@ -74,6 +74,15 @@ def get_owner_vector(boards, player_count):
         owner_index = boards[area_index]['owner']
         owner_vector[area_index][owner_index] = 1
     return owner_vector.flatten()
+
+
+def get_turn_vector(turn):
+    threshold = 50
+    if turn > threshold:
+        return np.array([0])
+    else:
+        turn = 1 - turn/threshold
+        return np.array([turn])
 
 
 def get_winner_vector(last_battle, player_count):
@@ -138,7 +147,7 @@ def prepare_dataset():
         battle_count = len(log['battles'])
         area_count = len(log['battles'][0]['areas'])
         player_count = log['players']
-        size = ((area_count-1)*area_count)//2 + area_count + player_count*area_count
+        size = ((area_count-1)*area_count)//2 + area_count + player_count*area_count + 1
         game_battles = np.empty((battle_count, size))
         game_winners = np.empty((battle_count, player_count))
         battle_index = 0
@@ -148,7 +157,8 @@ def prepare_dataset():
             adjacent_vector = get_adjacent_vector(battle['areas'])
             dice_vector = get_dice_vector(battle['areas'])
             owner_vector = get_owner_vector(battle['areas'], log['players'])
-            game_battles[battle_index] = np.hstack((adjacent_vector, dice_vector, owner_vector))
+            turn_vector = get_turn_vector(battle['turn'])
+            game_battles[battle_index] = np.hstack((adjacent_vector, dice_vector, owner_vector, turn_vector))
             game_winners[battle_index] = winner_vector
             battle_index += 1
 
@@ -174,7 +184,7 @@ class Dataset:
         self.test_xs = None
         self.test_ys = None
         self.player_count = 4
-        self.data_shape = 551
+        self.data_shape = 552
         # self.data_shape = (29, 34)
 
     def __str__(self):

@@ -68,12 +68,14 @@ class Game:
 
         self.summary = GameSummary()
 
+        self.nb_turns = 0
+
     def run(self):
         """Main loop of the game
         """
 
         game_log = {
-            "players": self.nb_players_alive,
+            "players": self.number_of_players,
             "battles": []
         }
 
@@ -141,6 +143,7 @@ class Game:
                 "adjacent_areas": [adjacent_area - 1 for adjacent_area in area.adjacent_areas_names]
             })
         game_log["battles"].append({
+            "turn": self.nb_turns,
             "player": player,
             "areas": areas
         })
@@ -155,6 +158,7 @@ class Game:
 
         elif msg['type'] == 'end_turn':
             self.nb_consecutive_end_of_turns += 1
+            self.nb_turns += 1
             affected_areas = self.end_turn()
             for p in self.players:
                 self.send_message(self.players[p], 'end_turn', areas=affected_areas)
