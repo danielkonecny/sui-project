@@ -1,5 +1,7 @@
-hexutil
-numpy
+hexutil~=0.2.2
+numpy~=1.18.5
 pyqt5==5.14
-matplotlib
+matplotlib~=3.3.2
 scipy
+
+tensorflow~=2.3.1
