@@ -122,15 +122,18 @@ class ExpMMNode:
                         return_sum += (1-probability_of_win) * next_node.exp_mm_rec(copy.deepcopy(player_controller))
                         sum_of_probabilities += 1-probability_of_win
 
-                return_average = return_sum / sum_of_probabilities
-                return return_average
+                if sum_of_probabilities != 0:
+                    return_average = return_sum / sum_of_probabilities
+                    return return_average
+                else:
+                    return 0
 
     def calculate_heuristic(self, player):
         players_regions = self.board_copy.get_players_regions(player)
         max_region_size = max(len(region) for region in players_regions)
         nb_of_areas = len(self.board_copy.get_player_areas(player))
         nb_of_dice = self.board_copy.get_player_dice(player)
-        return nb_of_dice + max_region_size
+        return nb_of_dice
 
 
 class AI:
@@ -150,7 +153,7 @@ class AI:
         self.logger = logging.getLogger('AI')
         self.debugcounter = 0
         self.max_num_of_turn_first_level = 3  # graph width for our ai
-        self.max_num_of_turn_variants = 1  # graph width for each player
+        self.max_num_of_turn_variants = 2  # graph width for each player
         self.max_num_of_turns_per_player = 10  # graph height for each player
         self.player_controller = None
         self.win_rate_treshold = 0.8
@@ -207,7 +210,8 @@ class AI:
 
                 return BattleCommand(area_name, best_return_turn[1])
         else:
-            return BattleCommand(turns[0][0], turns[0][1])
+            if len(turns) != 0:
+                return BattleCommand(turns[0][0], turns[0][1])
 
         # turns - 2,6,8,10
         # vezmeme 2 nejlepsi a udelame pro ne expmm na jedno kolo (2 nejlepsi tahy (podle ste) kazdy)
