@@ -10,13 +10,23 @@ chalenge:
 tournament: 
 	mkdir -p ../tournaments
 	mkdir -p ../logs
-	python3 ./scripts/dicewars-tournament.py -r -g 2 -n 50 -b 101 -s 1337 -l ../logs --save ../tournaments/tournament-g2-n50.pickle
+	python3 ./scripts/dicewars-tournament.py -r -g 4 -n 10 -l ../logs --save ../tournaments/tournament-g2-n50.pickle
+	
+tournament50: 
+	mkdir -p ../tournaments
+	mkdir -p ../logs
+	python3 ./scripts/dicewars-tournament.py -r -g 4 -n 50 -l ../logs --save ../tournaments/tournament-g2-n50.pickle
+	
+tournament_test: 
+	mkdir -p ../tournaments
+	mkdir -p ../logs
+	python3 ./scripts/dicewars-tournament.py -r -g 4 -n 10 -l ../logs --save ../tournaments/tournament-g2-n50.pickle --ai-under-test dt.ste_tom
 	
 ai:
 	python3 ./scripts/dicewars-ai-only.py -r -b 11 -o 22 -s 33 -c 44 -n 10 -l ../logs --ai dt.stei xlogin42
 	
 duel20:
-	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
+	Spython3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
 
 duel20First:
 	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste_tom dt.ste
