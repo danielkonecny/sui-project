@@ -107,20 +107,20 @@ class ExpMMNode:
                 for turn in turns:
                     board_after_battle_won, board_after_battle_lose = self.simulate_attack(turn[0], turn[1])
                     probability_of_win = turn[3]
-                                            # 0.7
+                    # 0.7
                     if probability_of_win > self.win_rate_treshold:
                         next_node = ExpMMNode(board_after_battle_won, self.ai)
                         return_sum += probability_of_win * next_node.exp_mm_rec(copy.deepcopy(player_controller))
                         sum_of_probabilities += probability_of_win
-                                              # 0.3
+                        # 0.3
                     elif probability_of_win > self.lose_rate_treshold:
                         next_node = ExpMMNode(board_after_battle_won, self.ai)
                         return_sum += probability_of_win * next_node.exp_mm_rec(copy.deepcopy(player_controller))
                         sum_of_probabilities += probability_of_win
 
                         next_node = ExpMMNode(board_after_battle_lose, self.ai)
-                        return_sum += (1-probability_of_win) * next_node.exp_mm_rec(copy.deepcopy(player_controller))
-                        sum_of_probabilities += 1-probability_of_win
+                        return_sum += (1 - probability_of_win) * next_node.exp_mm_rec(copy.deepcopy(player_controller))
+                        sum_of_probabilities += 1 - probability_of_win
 
                 if sum_of_probabilities != 0:
                     return_average = return_sum / sum_of_probabilities
@@ -133,7 +133,7 @@ class ExpMMNode:
         max_region_size = max(len(region) for region in players_regions)
         nb_of_areas = len(self.board_copy.get_player_areas(player))
         nb_of_dice = self.board_copy.get_player_dice(player)
-        return nb_of_dice
+        return max_region_size
 
 
 class AI:
@@ -153,7 +153,7 @@ class AI:
         self.logger = logging.getLogger('AI')
         self.debugcounter = 0
         self.max_num_of_turn_first_level = 3  # graph width for our ai
-        self.max_num_of_turn_variants = 2  # graph width for each player
+        self.max_num_of_turn_variants = 1  # graph width for each player
         self.max_num_of_turns_per_player = 10  # graph height for each player
         self.player_controller = None
         self.win_rate_treshold = 0.8
@@ -185,65 +185,38 @@ class AI:
                     board_after_battle_won, board_after_battle_lose = root_node.simulate_attack(turn[0], turn[1])
                     probability_of_win = turn[3]
                     actual_ret = 0
-                                            # 0.8
+                    # 0.8
                     if probability_of_win > self.win_rate_treshold:
                         next_node = ExpMMNode(board_after_battle_won, self)
                         actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
-                                              # 0.3
+                        # 0.3
                     elif probability_of_win > self.lose_rate_treshold:
                         next_node = ExpMMNode(board_after_battle_won, self)
-                        actual_ret_won = probability_of_win * next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
+                        actual_ret_won = probability_of_win * next_node.exp_mm_rec(
+                            copy.deepcopy(self.player_controller))
 
                         next_node = ExpMMNode(board_after_battle_lose, self)
-                        actual_ret_lose = (1-probability_of_win) * next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
+                        actual_ret_lose = (1 - probability_of_win) * next_node.exp_mm_rec(
+                            copy.deepcopy(self.player_controller))
 
                         actual_ret = actual_ret_won + actual_ret_lose
 
                     if actual_ret > best_return:
                         best_return_turn = turn
 
-                area_name = best_return_turn[0]
+                attacker = best_return_turn[0]
+                defender = best_return_turn[1]
                 self.logger.debug("Possible turn: {}".format(best_return_turn))
                 hold_prob = best_return_turn[2]
                 self.logger.debug(
-                    "{0}->{1} attack and hold probabiliy {2}".format(area_name, best_return_turn[1], hold_prob))
+                    "{0}->{1} attack and hold probabiliy {2}".format(attacker, defender, hold_prob))
 
-                return BattleCommand(area_name, best_return_turn[1])
+                if attacker != turns[0][0] and defender != turns[0][1]:
+                    pass
+                return BattleCommand(attacker, defender)
         else:
             if len(turns) != 0:
                 return BattleCommand(turns[0][0], turns[0][1])
-
-        # turns - 2,6,8,10
-        # vezmeme 2 nejlepsi a udelame pro ne expmm na jedno kolo (2 nejlepsi tahy (podle ste) kazdy)
-
-        # if(self.debugcounter == 0):
-        #     print("puvodni")
-        #     print(self.board)
-        #     for key, area in self.board.areas.items():
-        #         print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
-        #
-        #     p1 = ExpMMNode(self.board, self)
-        #     print("upravena")
-        #     # print(turns)
-        #     if len(turns) > 0:
-        #         self.debugcounter += 1
-        #         print("udelam vsechno")
-        #         p1.simulate_attack(turns[0][0], turns[0][1])
-        #         for key, area in p1.board_copy.areas.items():
-        #             print(f"{key}:\t{area.owner_name} - {area.dice} - {area.neighbours}")
-        #         print("odkud: ", turns[0][0])
-        #         print("kampak: ", turns[0][1])
-        #     else:
-        #         print("nebudu delat nic!")
-
-        # if turns:
-        #     turn = turns[0]
-        #     area_name = turn[0]
-        #     self.logger.debug("Possible turn: {}".format(turn))
-        #     hold_prob = turn[2]
-        #     self.logger.debug("{0}->{1} attack and hold probabiliy {2}".format(area_name, turn[1], hold_prob))
-        #
-        #     return BattleCommand(area_name, turn[1])
 
         self.logger.debug("No more plays.")
         return EndTurnCommand()
@@ -270,7 +243,7 @@ class AI:
             hold_prob = atk_prob * probability_of_holding_area(board, target.get_name(), atk_power - 1,
                                                                player_name)
             hold_2_prob = hold_prob + 0.2 * probability_of_holding_area(board, area_name, 1, player_name)
-            if hold_2_prob >= 0.2 or atk_power == 8:
+            if hold_prob >= 0.2 or atk_power == 8:
                 turns.append([area_name, target.get_name(), hold_prob, atk_prob])
 
         # print(len(turns))
