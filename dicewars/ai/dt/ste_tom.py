@@ -181,8 +181,12 @@ class AI:
             model = Model()
             model.load()
 
+            if time_left < 4:
+                self.max_num_of_turn_first_level = 2  # graph width for our ai
+                self.max_num_of_turn_variants = 1  # graph width for each player
+
             # print(self.player_controller.get_player_sequence())
-            if time_left > 4:
+            if time_left > 3:
                 i = 0
                 if len(turns) != 0:
                     attacker = None
