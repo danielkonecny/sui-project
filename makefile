@@ -26,7 +26,7 @@ ai:
 	python3 ./scripts/dicewars-ai-only.py -r -b 11 -o 22 -s 33 -c 44 -n 10 -l ../logs --ai dt.stei xlogin42
 	
 duel20:
-	Spython3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
+	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste dt.ste_tom
 
 duel20First:
 	python3 ./scripts/dicewars-ai-only.py -r -n 20 --ai dt.ste_tom dt.ste
