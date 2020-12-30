@@ -164,6 +164,7 @@ class AI:
         self.player_controller = None
         self.win_rate_treshold = 0.8
         self.lose_rate_treshold = 0.3
+        self.start_of_game = True
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
         self.logger.debug("Looking for possible turns.")
@@ -176,14 +177,17 @@ class AI:
 
         print("- {:.1f}".format(time_left), end=" - ")
 
+        # little time left, so lets generate smaller tree
         if time_left < 5:
             self.max_num_of_turn_first_level = 2  # graph width for our ai
             self.max_num_of_turn_variants = 1  # graph width for each player
             print("c", end=" - ")
 
+        if time_left > 11:
+            self.start_of_game = False
 
-        # print(self.player_controller.get_player_sequence())
-        if time_left < 3 or (time_left > 9.9 and time_left < 11):
+        # for first few turns we play as ste
+        if time_left < 3 or self.start_of_game:
             print("# STE")
             if len(turns) != 0:
                 return BattleCommand(turns[0][0], turns[0][1])
