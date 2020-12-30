@@ -1,6 +1,6 @@
 import logging
-from ..utils import possible_attacks
-from ..utils import probability_of_holding_area, probability_of_successful_attack
+from dicewars.ai.utils import possible_attacks
+from dicewars.ai.utils import probability_of_holding_area, probability_of_successful_attack
 import copy
 
 from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
@@ -53,7 +53,8 @@ class PlayerController:
         players_on_board = self.get_players_on_board()
         # filter only alive players from players order
         alive_players_sequence = [i for i in players_order if i in players_on_board]
-        print(alive_players_sequence)
+        #if len(alive_players_sequence) == 1:
+        #    print("#########################")
         return alive_players_sequence
 
     def should_finish(self):
@@ -171,8 +172,6 @@ class AI:
         self.board = board
 
         turns = self.possible_turns()
-        self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player,
-                                                  self.player_name, self.players_order)
 
         model = Model()
         model.load()
@@ -192,6 +191,10 @@ class AI:
                 best_return = -1
                 best_return_turn = None
                 root_node = ExpMMNode(self.board, nb_turns_this_game, self, model)
+
+                self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player,
+                                                          self.player_name, self.players_order)
+
                 self.player_controller.i_just_played()
 
                 for turn in turns:
