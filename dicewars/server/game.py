@@ -5,8 +5,8 @@ import random
 import socket
 import sys
 
-from os.path import exists
-import pickle
+# from os.path import exists
+# import pickle
 
 from .player import Player
 
@@ -14,7 +14,7 @@ from .summary import GameSummary
 
 MAX_PASS_ROUNDS = 8
 MAX_BATTLES_PER_GAME = 10000  # obsevered maximum of 5671 over over 100k games
-SAVE_BOARDS = False
+# SAVE_BOARDS = False
 
 
 class Game:
@@ -68,16 +68,16 @@ class Game:
 
         self.summary = GameSummary()
 
-        self.nb_turns = 0
+        # self.nb_turns = 0
 
     def run(self):
         """Main loop of the game
         """
 
-        game_log = {
-            "players": self.number_of_players,
-            "battles": []
-        }
+        # game_log = {
+        #     "players": self.number_of_players,
+        #     "battles": []
+        # }
 
         try:
             for i in range(1, self.number_of_players + 1):
@@ -85,17 +85,17 @@ class Game:
                 self.send_message(player, 'game_state')
             while True:
                 self.logger.debug("Current player {}".format(self.current_player.get_name()))
-                self.handle_player_turn(game_log)
+                self.handle_player_turn() # self.handle_player_turn(game_log)
                 if self.check_win_condition():
                     sys.stdout.write(str(self.summary))
                     break
 
-            if SAVE_BOARDS:
-                game_index = 0
-                while exists(f"logs/game{game_index:05d}.pickle"):
-                    game_index += 1
-                with open(f"logs/game{game_index:05d}.pickle", "wb+") as game_file:
-                    pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
+            # if SAVE_BOARDS:
+            #     game_index = 0
+            #     while exists(f"logs/game{game_index:05d}.pickle"):
+            #         game_index += 1
+            #     with open(f"logs/game{game_index:05d}.pickle", "wb+") as game_file:
+            #         pickle.dump(game_log, game_file, protocol=pickle.HIGHEST_PROTOCOL)
 
         except KeyboardInterrupt:
             self.logger.info("Game interrupted.")
@@ -128,25 +128,25 @@ class Game:
         area.set_owner_name(player.get_name())
         player.add_area(area)
 
-    def handle_player_turn(self, game_log):
+    def handle_player_turn(self):   # def handle_player_turn(self, game_log):
         """Handle clients message and carry out the action
         """
         self.logger.debug("Handling player {} ({}) turn".format(self.current_player.get_name(), self.current_player.nickname))
         player = self.current_player.get_name()
         msg = self.get_message(player)
 
-        areas = []
-        for key, area in self.board.areas.items():
-            areas.append({
-                "owner": area.owner_name - 1,
-                "dices": area.dice,
-                "adjacent_areas": [adjacent_area - 1 for adjacent_area in area.adjacent_areas_names]
-            })
-        game_log["battles"].append({
-            "turn": self.nb_turns,
-            "player": player,
-            "areas": areas
-        })
+        # areas = []
+        # for key, area in self.board.areas.items():
+        #     areas.append({
+        #         "owner": area.owner_name - 1,
+        #         "dices": area.dice,
+        #         "adjacent_areas": [adjacent_area - 1 for adjacent_area in area.adjacent_areas_names]
+        #     })
+        # game_log["battles"].append({
+        #     "turn": self.nb_turns,
+        #     "player": player,
+        #     "areas": areas
+        # })
 
         if msg['type'] == 'battle':
             self.nb_consecutive_end_of_turns = 0
@@ -158,7 +158,7 @@ class Game:
 
         elif msg['type'] == 'end_turn':
             self.nb_consecutive_end_of_turns += 1
-            self.nb_turns += 1
+            # self.nb_turns += 1
             affected_areas = self.end_turn()
             for p in self.players:
                 self.send_message(self.players[p], 'end_turn', areas=affected_areas)
