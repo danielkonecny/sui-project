@@ -53,8 +53,6 @@ class PlayerController:
         players_on_board = self.get_players_on_board()
         # filter only alive players from players order
         alive_players_sequence = [i for i in players_order if i in players_on_board]
-        #if len(alive_players_sequence) == 1:
-        #    print("#########################")
         return alive_players_sequence
 
     def should_finish(self):
@@ -143,7 +141,7 @@ class ExpMMNode:
 
         win = 0
         if win_probabilities is not None:
-            win = win_probabilities[player-1]
+            win = win_probabilities[player - 1]
 
         if win > 0.001:
             probability = 0.3 * score + 0.7 * win
@@ -152,7 +150,7 @@ class ExpMMNode:
 
         return probability
 
-        
+
 class AI:
     def __init__(self, player_name, board, players_order):
         self.board = None
@@ -176,15 +174,21 @@ class AI:
         model = Model()
         model.load()
 
+        print("- {:.1f}".format(time_left), end=" - ")
+
         if time_left < 5:
             self.max_num_of_turn_first_level = 2  # graph width for our ai
             self.max_num_of_turn_variants = 1  # graph width for each player
+            print("c", end=" - ")
+
 
         # print(self.player_controller.get_player_sequence())
-        if time_left < 3:
+        if time_left < 3 or (time_left > 9.9 and time_left < 11):
+            print("# STE")
             if len(turns) != 0:
                 return BattleCommand(turns[0][0], turns[0][1])
         else:
+            print("# strom")
             if len(turns) != 0:
                 turns = turns[:self.max_num_of_turn_first_level]
 
@@ -253,7 +257,7 @@ class AI:
             atk_prob = probability_of_successful_attack(board, area_name, target.get_name())
             hold_prob = atk_prob * probability_of_holding_area(board, target.get_name(), atk_power - 1,
                                                                player_name)
-            hold_2_prob = hold_prob + 0.2 * probability_of_holding_area(board, area_name, 1, player_name)
+            #hold_2_prob = hold_prob + 0.2 * probability_of_holding_area(board, area_name, 1, player_name)
             if hold_prob >= 0.2 or atk_power == 8:
                 turns.append([area_name, target.get_name(), hold_prob, atk_prob])
 
