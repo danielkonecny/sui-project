@@ -21,7 +21,7 @@ class AI:
         self.player_controller = None
         self.win_rate_treshold = 0.8
         self.lose_rate_treshold = 0.3
-        self.start_of_game = True
+        #self.start_of_game = True # switcher for starting STE turns
         self.model = Model()
         self.model.load()
 
@@ -39,11 +39,12 @@ class AI:
             self.max_num_of_turn_variants = 1  # graph width for each player
             # print("c", end=" - ")
 
-        if time_left > 11:
-            self.start_of_game = False
+        # after few STE turns lets generate tree
+        # if time_left > 11:
+        #    self.start_of_game = False
 
         # for first few turns we play as ste
-        if time_left < 3 or self.start_of_game:
+        if time_left < 3 or (time_left > 9.9 and time_left < 11):
             # print("# STE")
             if len(turns) != 0:
                 return BattleCommand(turns[0][0], turns[0][1])
