@@ -8,9 +8,9 @@ from model import Model
 
 
 class PlayerController:
-    def __init__(self, board, max_turns_per_player, my_ai_name):
+    def __init__(self, board, max_turns_per_player, my_ai_name, players_order):
         self.board = board
-        self.player_sequence = self.get_players_on_board()
+        self.player_sequence = self.get_player_sequence(players_order)
         self.actual_player_nb_turns = 0
         self.max_turns_per_player = max_turns_per_player
         self.player_on_turn = my_ai_name
@@ -49,12 +49,12 @@ class PlayerController:
             players.append(area_owner) if area_owner not in players else players
         return players
 
-    def search_player_sequence(self):
-        # todo get player sequence, from game probably
-        pass
-
-    def get_player_sequence(self):
-        return self.player_sequence
+    def get_player_sequence(self, players_order):
+        players_on_board = self.get_players_on_board()
+        # filter only alive players from players order
+        alive_players_sequence = [i for i in players_order if i in players_on_board]
+        print(alive_players_sequence)
+        return alive_players_sequence
 
     def should_finish(self):
         return self.finish_recursion and (self.get_player_on_turn() == self.get_my_ai_name())
@@ -161,6 +161,7 @@ class AI:
     def __init__(self, player_name, board, players_order):
         self.board = None
         self.player_name = player_name
+        self.players_order = players_order
         self.logger = logging.getLogger('AI')
         self.debugcounter = 0
         self.max_num_of_turn_first_level = 3  # graph width for our ai
