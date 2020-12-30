@@ -3,10 +3,9 @@ import json
 from json.decoder import JSONDecodeError
 import logging
 import signal
-import numpy as np
 
 from .timers import FischerTimer, FixedTimer
-from model import Model
+# from model import Model
 
 
 class TimeoutError(Exception):
@@ -20,7 +19,7 @@ def TimeoutHandler(signum, handler):
 TIME_LIMIT_CONSTRUCTOR = 10.0  # in seconds, for AI constructor
 FISCHER_INIT = 10.0  # seconds
 FISCHER_INCREMENT = 0.25  # seconds
-PREDICT_WINNER = True
+# PREDICT_WINNER = False
 
 
 class BattleCommand:
@@ -105,13 +104,13 @@ class AIDriver:
                         )
                     self.process_command(command)
 
-                    if PREDICT_WINNER:
-                        model = Model()
-                        model.load()
-                        probabilities = model.predict_board(self.board, self.turns_finished)
-                        print(f"\nMOVE")
-                        for index, probability in zip(range(4), probabilities):
-                            print(f"Player {index}: {probability * 100:.2f} %")
+                    # if PREDICT_WINNER:
+                    #     model = Model()
+                    #     model.load()
+                    #     probabilities = model.predict_board(self.board, self.turns_finished)
+                    #     print(f"\nMOVE")
+                    #     for index, probability in zip(range(4), probabilities):
+                    #         print(f"Player {index}: {probability * 100:.2f} %")
 
                 except TimeoutError:
                     self.logger.warning("Forced 'end_turn' because of timeout")
