@@ -132,13 +132,13 @@ class Dataset:
         report += f"Test Xs: {self.test_xs.shape}\nTest Ys: {self.test_ys.shape}"
         return report
 
-    def load(self, path="datasets/"):
+    def load(self, path="dicewars/ai/xrysav27/datasets/"):
         self.train_xs = np.load(f"{path}train_xs.npy")
         self.train_ys = np.load(f"{path}train_ys.npy")
         self.test_xs = np.load(f"{path}test_xs.npy")
         self.test_ys = np.load(f"{path}test_ys.npy")
 
-    def reload(self, path="datasets/", train_percentage=0.8):
+    def reload(self, path="dicewars/ai/xrysav27/datasets/", train_percentage=0.9):
         xs, ys = prepare_dataset()
         size = len(xs)
 
@@ -163,3 +163,9 @@ class Dataset:
         for i in range(0, size, batch_size):
             batch_indices = shuffle[i:i + batch_size]
             yield self.train_xs[batch_indices], self.train_ys[batch_indices]
+
+
+if __name__ == '__main__':
+    dataset = Dataset()
+    dataset.reload()
+    print(dataset)

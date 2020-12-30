@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from .dataset import Dataset
+from dataset import Dataset
 
 
 class Model:
@@ -26,20 +26,16 @@ class Model:
                 loss = self.model.train_on_batch(batch_battles, batch_winners)
                 print(f"- Batch {batch_index:03d} - loss: {loss}")
                 batch_index += 1
-            self.model.save_weights(f'weights/model_weights{epoch_index:04d}.h5')
+            self.model.save_weights(f'dicewars/ai/xrysav27/weights/model_weights{epoch_index:04d}.h5')
 
     def save(self):
-        self.model.save(f'model.h5')
+        self.model.save(f'dicewars/ai/xrysav27/models/win_prob_model.h5')
 
     def load(self):
-        try:
-            self.model = tf.keras.models.load_model(f'model.h5')
-        except Exception as e:
-            print(e)
+        self.model = tf.keras.models.load_model(f'dicewars/ai/xrysav27/models/win_prob_model.h5')
 
-    def evaluate(self):
-        epoch_index = 10
-        self.model.load_weights(f'weights/model_weights{epoch_index:04d}.h5')
+    def evaluate(self, epoch_index=9):
+        self.model.load_weights(f'dicewars/ai/xrysav27/weights/model_weights{epoch_index:04d}.h5')
         self.model.evaluate(self.dataset.test_xs, self.dataset.test_ys)
 
     def predict_board(self, board, turn):
@@ -61,18 +57,17 @@ class Model:
         model_input = np.expand_dims(model_input, 0)
         return np.squeeze(self.model.predict(model_input))
 
-    def predict(self):
-        epoch_index = 10
-        self.model.load_weights(f'weights/model_weights{epoch_index:04d}.h5')
-        prediction = self.model.predict(self.dataset.test_xs[:15000:1000])
-        for i, j in zip(range(0, 15000, 1000), range(15)):
+    def predict(self, epoch_index=9):
+        self.model.load_weights(f'dicewars/ai/xrysav27/weights/model_weights{epoch_index:04d}.h5')
+        prediction = self.model.predict(self.dataset.test_xs[:8000:500])
+        for i, j in zip(range(0, 8000, 500), range(15)):
             print(f"{self.dataset.test_ys[i]} - {prediction[j]}")
 
 
 if __name__ == '__main__':
-    epoch_count = 10
-
     model = Model()
-    model.dataset.reload()
-    model.train(epoch_count)
+    model.dataset.load()
+    model.train()
     model.save()
+    model.evaluate()
+    model.predict()
