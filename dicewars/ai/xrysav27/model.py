@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from dataset import Dataset
+from dicewars.ai.xrysav27.dataset import Dataset
 
 
 class Model:

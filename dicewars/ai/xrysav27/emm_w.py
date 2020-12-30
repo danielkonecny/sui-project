@@ -3,9 +3,9 @@ import logging
 
 from dicewars.client.ai_driver import BattleCommand, EndTurnCommand
 from ..utils import probability_of_holding_area, probability_of_successful_attack, possible_attacks
-from .expmmnode import ExpMMNode
-from .player_controller import PlayerController
-from .model import Model
+from dicewars.ai.xrysav27.expmmnode import ExpMMNode
+from dicewars.ai.xrysav27.player_controller import PlayerController
+from dicewars.ai.xrysav27.model import Model
 
 
 class AI:
@@ -17,20 +17,19 @@ class AI:
         self.debugcounter = 0
         self.max_num_of_turn_first_level = 3  # graph width for our ai
         self.max_num_of_turn_variants = 1  # graph width for each player
-        self.max_num_of_turns_per_player = 5  # graph height for each player
+        self.max_num_of_turns_per_player = 10  # graph height for each player
         self.player_controller = None
         self.win_rate_treshold = 0.8
         self.lose_rate_treshold = 0.3
         self.start_of_game = True
+        self.model = Model()
+        self.model.load()
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
         self.logger.debug("Looking for possible turns.")
         self.board = board
 
         turns = self.possible_turns()
-
-        model = Model()
-        model.load()
 
         # print("- {:.1f}".format(time_left), end=" - ")
 
@@ -55,7 +54,7 @@ class AI:
 
                 best_return = -1
                 best_return_turn = None
-                root_node = ExpMMNode(self.board, nb_turns_this_game, self, model)
+                root_node = ExpMMNode(self.board, nb_turns_this_game, self, self.model)
 
                 self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player,
                                                           self.player_name, self.players_order)
@@ -68,15 +67,15 @@ class AI:
                     actual_ret = 0
                     # 0.8
                     if probability_of_win > self.win_rate_treshold:
-                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
+                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, self.model)
                         actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
                         # 0.3
                     elif probability_of_win > self.lose_rate_treshold:
-                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
+                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, self.model)
                         actual_ret_won = probability_of_win * next_node.exp_mm_rec(
                             copy.deepcopy(self.player_controller))
 
-                        next_node = ExpMMNode(board_after_battle_lose, nb_turns_this_game, self, model)
+                        next_node = ExpMMNode(board_after_battle_lose, nb_turns_this_game, self, self.model)
                         actual_ret_lose = (1 - probability_of_win) * next_node.exp_mm_rec(
                             copy.deepcopy(self.player_controller))
 
