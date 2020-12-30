@@ -137,13 +137,8 @@ class ExpMMNode:
             score = max(len(region) for region in players_regions) / 29
         # nb_of_areas = len(self.board_copy.get_player_areas(player))
         # nb_of_dice = self.board_copy.get_player_dice(player)
-        win_probabilities = None
 
-        try:
-            win_probabilities = self.model.predict_board(self.board_copy, self.nb_turns_this_game)
-        except Exception as e:
-            print(f"\nAjajaj - Neural Network - {repr(e)}\n")
-            raise
+        win_probabilities = self.model.predict_board(self.board_copy, self.nb_turns_this_game)
 
         win = 0
         if win_probabilities is not None:
@@ -172,80 +167,66 @@ class AI:
         self.lose_rate_treshold = 0.3
 
     def ai_turn(self, board, nb_moves_this_turn, nb_turns_this_game, time_left):
-        try:
-            self.logger.debug("Looking for possible turns.")
-            self.board = board
+        self.logger.debug("Looking for possible turns.")
+        self.board = board
 
-            turns = self.possible_turns()
-            self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player, self.player_name)
+        turns = self.possible_turns()
+        self.player_controller = PlayerController(self.board, self.max_num_of_turns_per_player,
+                                                  self.player_name, self.players_order)
 
-            model = Model()
-            model.load()
+        model = Model()
+        model.load()
 
-            if time_left < 4:
-                self.max_num_of_turn_first_level = 2  # graph width for our ai
-                self.max_num_of_turn_variants = 1  # graph width for each player
+        if time_left < 5:
+            self.max_num_of_turn_first_level = 2  # graph width for our ai
+            self.max_num_of_turn_variants = 1  # graph width for each player
 
-            # print(self.player_controller.get_player_sequence())
-            if time_left > 3:
-                i = 0
-                if len(turns) != 0:
-                    attacker = None
-                    defender = None
+        # print(self.player_controller.get_player_sequence())
+        if time_left < 3:
+            if len(turns) != 0:
+                return BattleCommand(turns[0][0], turns[0][1])
+        else:
+            if len(turns) != 0:
+                turns = turns[:self.max_num_of_turn_first_level]
 
-                    turns = turns[:self.max_num_of_turn_first_level]
+                best_return = -1
+                best_return_turn = None
+                root_node = ExpMMNode(self.board, nb_turns_this_game, self, model)
+                self.player_controller.i_just_played()
 
-                    try:
-                        best_return = -1
-                        best_return_turn = None
-                        root_node = ExpMMNode(self.board, nb_turns_this_game, self, model)
-                        self.player_controller.i_just_played()
+                for turn in turns:
+                    board_after_battle_won, board_after_battle_lose = root_node.simulate_attack(turn[0], turn[1])
+                    probability_of_win = turn[3]
+                    actual_ret = 0
+                    # 0.8
+                    if probability_of_win > self.win_rate_treshold:
+                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
+                        actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
+                        # 0.3
+                    elif probability_of_win > self.lose_rate_treshold:
+                        next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
+                        actual_ret_won = probability_of_win * next_node.exp_mm_rec(
+                            copy.deepcopy(self.player_controller))
 
-                        for turn in turns:
-                            board_after_battle_won, board_after_battle_lose = root_node.simulate_attack(turn[0], turn[1])
-                            probability_of_win = turn[3]
-                            actual_ret = 0
-                            # 0.8
-                            if probability_of_win > self.win_rate_treshold:
-                                next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
-                                actual_ret = next_node.exp_mm_rec(copy.deepcopy(self.player_controller))
-                                # 0.3
-                            elif probability_of_win > self.lose_rate_treshold:
-                                next_node = ExpMMNode(board_after_battle_won, nb_turns_this_game, self, model)
-                                actual_ret_won = probability_of_win * next_node.exp_mm_rec(
-                                    copy.deepcopy(self.player_controller))
+                        next_node = ExpMMNode(board_after_battle_lose, nb_turns_this_game, self, model)
+                        actual_ret_lose = (1 - probability_of_win) * next_node.exp_mm_rec(
+                            copy.deepcopy(self.player_controller))
 
-                                next_node = ExpMMNode(board_after_battle_lose, nb_turns_this_game, self, model)
-                                actual_ret_lose = (1 - probability_of_win) * next_node.exp_mm_rec(
-                                    copy.deepcopy(self.player_controller))
+                        actual_ret = actual_ret_won + actual_ret_lose
 
-                                actual_ret = actual_ret_won + actual_ret_lose
+                    if actual_ret > best_return:
+                        best_return_turn = turn
 
-                            if actual_ret > best_return:
-                                best_return_turn = turn
+                attacker = best_return_turn[0]
+                defender = best_return_turn[1]
+                self.logger.debug("Possible turn: {}".format(best_return_turn))
+                hold_prob = best_return_turn[2]
+                self.logger.debug(
+                    "{0}->{1} attack and hold probabiliy {2}".format(attacker, defender, hold_prob))
 
-                        attacker = best_return_turn[0]
-                        defender = best_return_turn[1]
-                        self.logger.debug("Possible turn: {}".format(best_return_turn))
-                        hold_prob = best_return_turn[2]
-                        self.logger.debug(
-                            "{0}->{1} attack and hold probabiliy {2}".format(attacker, defender, hold_prob))
+                return BattleCommand(attacker, defender)
 
-                        if attacker != turns[0][0] and defender != turns[0][1]:
-                            pass
-                    except Exception as e:
-                        print(f"\nAjajaj - Expectiminimax - {repr(e)}\n")
-                        raise
-
-                    return BattleCommand(attacker, defender)
-            else:
-                if len(turns) != 0:
-                    return BattleCommand(turns[0][0], turns[0][1])
-
-            self.logger.debug("No more plays.")
-        except Exception as e:
-            print(f"\nSupr Ajajaj - {repr(e)}\n")
-            raise
+        self.logger.debug("No more plays.")
         return EndTurnCommand()
 
     def possible_turns(self, board=None, player_name=None):
