@@ -4,6 +4,9 @@ default: human
 human:
 	python3 ./scripts/dicewars-human.py --ai dt.sdc xrysav27 xlogin00 xlogin42
 	
+humanduel:
+	python3 ./scripts/dicewars-human.py --ai xrysav27
+	
 chalenge:
 	python3 ./scripts/dicewars-human.py --ai dt.sdc dt.ste dt.stei dt.wpm_c
 	
