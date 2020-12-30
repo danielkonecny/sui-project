@@ -20,6 +20,11 @@ tournament50:
 	mkdir -p ../logs
 	python3 ./scripts/dicewars-tournament.py -r -g 4 -n 50 -l ../logs --save ../tournaments/tournament-g2-n50.pickle
 	
+tournament100: 
+	mkdir -p ../tournaments
+	mkdir -p ../logs
+	python3 ./scripts/dicewars-tournament.py -r -g 4 -n 100 -l ../logs --save ../tournaments/tournament-g4-n100.pickle
+	
 tournament_test: 
 	mkdir -p ../tournaments
 	mkdir -p ../logs
